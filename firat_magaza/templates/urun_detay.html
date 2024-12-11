@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}{{ urun.ad }} - Fırat Store{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('ana_sayfa') }}" class="text-decoration-none">
+                    <i class="fas fa-home"></i> Ana Sayfa
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('kategori', kategori_id=urun.kategori_id) }}" class="text-decoration-none">
+                    {{ urun.kategori }}
+                </a>
+            </li>
+            <li class="breadcrumb-item active">{{ urun.ad }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Ürün Resmi -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                {% if urun.resim_url %}
+                    <img src="{{ url_for('static', filename='img/urunler/' + urun.resim_url) }}" 
+                         class="card-img-top product-image" 
+                         alt="{{ urun.ad }}">
+                {% else %}
+                    <div class="text-center py-5 bg-light">
+                        <i class="fas fa-image fa-4x text-muted"></i>
+                        <p class="mt-2 text-muted">Ürün görseli mevcut değil</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Ürün Bilgileri -->
+        <div class="col-md-6">
+            <h1 class="h2 mb-3">{{ urun.ad }}</h1>
+            
+            <div class="mb-4">
+                <h2 class="h4 text-primary mb-3">{{ urun.fiyat|para }}</h2>
+                {% if current_user.is_authenticated and current_user.not_ortalamasi %}
+                    {% set indirim = current_user.indirim_orani() %}
+                    {% if indirim > 0 %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-graduation-cap me-2"></i>
+                            Not ortalamanıza özel %{{ indirim }} indirim!
+                            <br>
+                            <strong>İndirimli Fiyat: {{ (urun.fiyat * (100 - indirim) / 100)|para }}</strong>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+
+            <div class="mb-4">
+                <h3 class="h5">Ürün Açıklaması</h3>
+                <p class="text-muted">{{ urun.aciklama }}</p>
+            </div>
+
+            <div class="mb-4">
+                <h3 class="h5">Stok Durumu</h3>
+                {% if urun.stok_miktari > 0 %}
+                    <p class="text-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Stokta {{ urun.stok_miktari }} adet mevcut
+                    </p>
+                {% else %}
+                    <p class="text-danger">
+                        <i class="fas fa-times-circle me-2"></i>
+                        Stokta yok
+                    </p>
+                {% endif %}
+            </div>
+
+            <!-- Sepete Ekle -->
+            {% if urun.stok_miktari > 0 %}
+                <form method="POST" action="{{ url_for('sepete_ekle', urun_id=urun.id) }}" class="mb-4">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="row g-3">
+                        <div class="col-auto">
+                            <div class="input-group">
+                                <span class="input-group-text">Adet</span>
+                                <input type="number" 
+                                       class="form-control" 
+                                       name="miktar" 
+                                       value="1" 
+                                       min="1" 
+                                       max="{{ urun.stok_miktari }}"
+                                       style="width: 80px;">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                                <i class="fas fa-cart-plus me-2"></i>Sepete Ekle
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            {% else %}
+                <button class="btn btn-secondary btn-lg w-100" disabled>
+                    <i class="fas fa-times me-2"></i>Stokta Yok
+                </button>
+            {% endif %}
+
+            <!-- Özellikler -->
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h3 class="h5 mb-3">Ürün Özellikleri</h3>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-tag me-2 text-primary"></i>
+                            <strong>Kategori:</strong> {{ urun.kategori }}
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-box me-2 text-primary"></i>
+                            <strong>Ürün Kodu:</strong> #{{ urun.id }}
+                        </li>
+                        {% if urun.olusturma_tarihi %}
+                        <li>
+                            <i class="fas fa-calendar me-2 text-primary"></i>
+                            <strong>Eklenme Tarihi:</strong> {{ urun.olusturma_tarihi|tarih }}
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.product-image {
+    max-height: 500px;
+    object-fit: contain;
+    background-color: #f8f9fa;
+}
+
+.input-group-text {
+    background-color: transparent;
+}
+
+.card {
+    border-radius: 15px;
+}
+
+.btn-lg {
+    padding: 12px 24px;
+    font-size: 1rem;
+}
+
+/* Miktar inputu için özel stil */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"] {
+    appearance: textfield; /* Standart özellik */
+    -webkit-appearance: textfield; /* WebKit tarayıcılar için */
+    -moz-appearance: textfield; /* Firefox tarayıcılar için */
+}
+
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Miktar inputu için kontrol
+    const miktarInput = document.querySelector('input[name="miktar"]');
+    if (miktarInput) {
+        miktarInput.addEventListener('change', function() {
+            const max = parseInt(this.getAttribute('max'));
+            const min = parseInt(this.getAttribute('min'));
+            let value = parseInt(this.value);
+            
+            if (value > max) this.value = max;
+            if (value < min) this.value = min;
+            if (isNaN(value)) this.value = min;
+        });
+    }
+});
+</script>
+{% endblock %}

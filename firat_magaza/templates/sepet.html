@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block title %}Sepetim - Fırat Store{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('ana_sayfa') }}" class="text-decoration-none">
+                    <i class="fas fa-home"></i> Ana Sayfa
+                </a>
+            </li>
+            <li class="breadcrumb-item active">Sepetim</li>
+        </ol>
+    </nav>
+
+    {% if current_user.sepet %}
+    <div class="row">
+        <!-- Sepet Ürünleri -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h2 class="h5 mb-0">
+                        <i class="fas fa-shopping-cart me-2"></i>Sepetim 
+                        <span class="badge bg-primary">{{ sepet_urun_sayisi }} Ürün</span>
+                    </h2>
+                </div>
+                <div class="card-body">
+                    {% for sepet_urunu in current_user.sepet %}
+                    <div class="cart-item mb-3 pb-3 border-bottom" data-id="{{ sepet_urunu.id }}">
+                        <div class="row align-items-center">
+                            <!-- Ürün Resmi -->
+                            <div class="col-md-2">
+                                {% if sepet_urunu.urun.resim_url %}
+                                <img src="{{ url_for('static', filename='img/urunler/' + sepet_urunu.urun.resim_url) }}"
+                                     alt="{{ sepet_urunu.urun.ad }}"
+                                     class="img-fluid rounded">
+                                {% else %}
+                                <div class="text-center py-4 bg-light rounded">
+                                    <i class="fas fa-image fa-2x text-muted"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Ürün Bilgileri -->
+                            <div class="col-md-4">
+                                <h5 class="mb-1">
+                                    <a href="{{ url_for('urun_detay', urun_id=sepet_urunu.urun.id) }}" 
+                                       class="text-decoration-none">
+                                        {{ sepet_urunu.urun.ad }}
+                                    </a>
+                                </h5>
+                                <p class="text-muted small mb-0">Kategori: {{ sepet_urunu.urun.kategori }}</p>
+                                <p class="text-primary mb-0">{{ sepet_urunu.urun.fiyat|para }}</p>
+                            </div>
+                            
+                            <!-- Miktar -->
+                            <div class="col-md-3">
+                                <div class="input-group">
+                                    <button class="btn btn-outline-secondary quantity-decrease" 
+                                            type="button"
+                                            data-id="{{ sepet_urunu.id }}">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <input type="number" 
+                                           class="form-control text-center quantity-input" 
+                                           value="{{ sepet_urunu.miktar }}"
+                                           min="1"
+                                           max="{{ sepet_urunu.urun.stok_miktari }}"
+                                           data-id="{{ sepet_urunu.id }}">
+                                    <button class="btn btn-outline-secondary quantity-increase" 
+                                            type="button"
+                                            data-id="{{ sepet_urunu.id }}">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Toplam ve Kaldır -->
+                            <div class="col-md-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-primary fw-bold">
+                                        {{ sepet_urunu.toplam_fiyat()|para }}
+                                    </span>
+                                    <button class="btn btn-outline-danger btn-sm remove-item"
+                                            data-id="{{ sepet_urunu.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sepet Özeti -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h3 class="h5 mb-0">Sipariş Özeti</h3>
+                </div>
+                <div class="card-body">
+                    {% set toplam_tutar = namespace(value=0) %}
+                    {% for sepet_urunu in current_user.sepet %}
+                        {% set toplam_tutar.value = toplam_tutar.value + sepet_urunu.toplam_fiyat() %}
+                    {% endfor %}
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Ara Toplam</span>
+                            <span>{{ toplam_tutar.value|para }}</span>
+                        </div>
+                        
+                        {% if current_user.not_ortalamasi %}
+                            {% set indirim_orani = current_user.indirim_orani() %}
+                            {% if indirim_orani > 0 %}
+                                {% set indirim_tutari = (toplam_tutar.value * indirim_orani / 100) %}
+                                <div class="d-flex justify-content-between mb-2 text-success">
+                                    <span>Not Ortalaması İndirimi (%{{ indirim_orani }})</span>
+                                    <span>-{{ indirim_tutari|para }}</span>
+                                </div>
+                                {% set toplam_tutar.value = toplam_tutar.value - indirim_tutari %}
+                            {% endif %}
+                        {% endif %}
+
+                        <hr>
+                        <div class="d-flex justify-content-between fw-bold">
+                            <span>Toplam</span>
+                            <span class="text-primary">{{ toplam_tutar.value|para }}</span>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('siparis_olustur') }}" class="mt-4">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="teslimat_adresi" class="form-label">Teslimat Adresi</label>
+                            <textarea class="form-control" 
+                                      id="teslimat_adresi" 
+                                      name="teslimat_adresi" 
+                                      rows="3" 
+                                      required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="odeme_yontemi" class="form-label">Ödeme Yöntemi</label>
+                            <select class="form-select" id="odeme_yontemi" name="odeme_yontemi" required>
+                                <option value="">Seçiniz</option>
+                                <option value="kredi_karti">Kredi Kartı</option>
+                                <option value="havale">Havale/EFT</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-check me-2"></i>Siparişi Tamamla
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-shopping-cart fa-4x text-muted mb-3"></i>
+        <h3>Sepetiniz Boş</h3>
+        <p class="text-muted">Sepetinizde henüz ürün bulunmuyor.</p>
+        <a href="{{ url_for('ana_sayfa') }}" class="btn btn-primary">
+            <i class="fas fa-shopping-bag me-2"></i>Alışverişe Başla
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.cart-item:last-child {
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+.quantity-input {
+    max-width: 70px;
+}
+
+.input-group-text {
+    background-color: transparent;
+}
+
+.card {
+    border-radius: 15px;
+}
+
+/* Miktar inputu için özel stil */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"] {
+    appearance: textfield; /* Standart özellik */
+    -webkit-appearance: textfield; /* WebKit tarayıcılar için */
+    -moz-appearance: textfield; /* Firefox tarayıcılar için */
+}
+
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Miktar artırma/azaltma
+    document.querySelectorAll('.quantity-decrease, .quantity-increase').forEach(button => {
+        button.addEventListener('click', function() {
+            const id = this.dataset.id;
+            const input = document.querySelector(`.quantity-input[data-id="${id}"]`);
+            const currentValue = parseInt(input.value);
+            const max = parseInt(input.getAttribute('max'));
+            const min = parseInt(input.getAttribute('min'));
+            
+            if (this.classList.contains('quantity-decrease')) {
+                if (currentValue > min) {
+                    input.value = currentValue - 1;
+                    updateQuantity(id, input.value);
+                }
+            } else {
+                if (currentValue < max) {
+                    input.value = currentValue + 1;
+                    updateQuantity(id, input.value);
+                }
+            }
+        });
+    });
+
+    // Miktar manuel güncelleme
+    document.querySelectorAll('.quantity-input').forEach(input => {
+        input.addEventListener('change', function() {
+            const max = parseInt(this.getAttribute('max'));
+            const min = parseInt(this.getAttribute('min'));
+            let value = parseInt(this.value);
+            
+            if (value > max) this.value = max;
+            if (value < min) this.value = min;
+            if (isNaN(value)) this.value = min;
+            
+            updateQuantity(this.dataset.id, this.value);
+        });
+    });
+
+    // Ürün kaldırma
+    document.querySelectorAll('.remove-item').forEach(button => {
+        button.addEventListener('click', function() {
+            if (confirm('Bu ürünü sepetten kaldırmak istediğinize emin misiniz?')) {
+                removeItem(this.dataset.id);
+            }
+        });
+    });
+
+    // AJAX fonksiyonları
+    function updateQuantity(id, quantity) {
+        fetch(`/sepet/guncelle/${id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+            },
+            body: JSON.stringify({ miktar: quantity })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Bir hata oluştu.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Bir hata oluştu.');
+        });
+    }
+
+    function removeItem(id) {
+        fetch(`/sepet/kaldir/${id}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Bir hata oluştu.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Bir hata oluştu.');
+        });
+    }
+});
+</script>
+{% endblock %}

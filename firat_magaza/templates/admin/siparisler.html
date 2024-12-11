@@ -1,0 +1,191 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Siparişler - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Başlık ve Filtreler -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+        <h1 class="h2">Siparişler</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-export-type="excel">
+                    <i class="fas fa-file-excel me-1"></i>Excel
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-export-type="pdf">
+                    <i class="fas fa-file-pdf me-1"></i>PDF
+                </button>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="print">
+                <i class="fas fa-print me-1"></i>Yazdır
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtreler -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <form id="orderFilterForm" class="row g-3">
+                        <div class="col-md-2">
+                            <label class="form-label">Sipariş No</label>
+                            <input type="text" class="form-control" name="order_id" placeholder="#12345">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Müşteri</label>
+                            <input type="text" class="form-control" name="customer" placeholder="Ad veya E-posta">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Durum</label>
+                            <select class="form-select" name="status">
+                                <option value="">Tümü</option>
+                                <option value="beklemede">Beklemede</option>
+                                <option value="onaylandı">Onaylandı</option>
+                                <option value="kargoda">Kargoda</option>
+                                <option value="tamamlandı">Tamamlandı</option>
+                                <option value="iptal">İptal</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Başlangıç Tarihi</label>
+                            <input type="date" class="form-control" name="start_date">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Bitiş Tarihi</label>
+                            <input type="date" class="form-control" name="end_date">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-1"></i>Filtrele
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Siparişler Tablosu -->
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover sortable" id="ordersTable">
+                    <thead>
+                        <tr>
+                            <th>
+                                <input type="checkbox" class="form-check-input bulk-select-all">
+                            </th>
+                            <th data-sort="id">Sipariş No <i class="fas fa-sort"></i></th>
+                            <th data-sort="date">Tarih <i class="fas fa-sort"></i></th>
+                            <th data-sort="customer">Müşteri <i class="fas fa-sort"></i></th>
+                            <th data-sort="total">Tutar <i class="fas fa-sort"></i></th>
+                            <th data-sort="status">Durum <i class="fas fa-sort"></i></th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for siparis in siparisler %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" class="form-check-input bulk-select-item" value="{{ siparis.id }}">
+                            </td>
+                            <td>#{{ siparis.id }}</td>
+                            <td class="format-date">{{ siparis.siparis_tarihi }}</td>
+                            <td>
+                                {{ siparis.kullanici.ad }} {{ siparis.kullanici.soyad }}
+                                <br>
+                                <small class="text-muted">{{ siparis.kullanici.email }}</small>
+                            </td>
+                            <td class="format-price">{{ siparis.toplam_tutar }}</td>
+                            <td>
+                                <select class="form-select form-select-sm status-select" 
+                                        data-order-id="{{ siparis.id }}">
+                                    <option value="beklemede" {% if siparis.durum == 'beklemede' %}selected{% endif %}>
+                                        Beklemede
+                                    </option>
+                                    <option value="onaylandı" {% if siparis.durum == 'onaylandı' %}selected{% endif %}>
+                                        Onaylandı
+                                    </option>
+                                    <option value="kargoda" {% if siparis.durum == 'kargoda' %}selected{% endif %}>
+                                        Kargoda
+                                    </option>
+                                    <option value="tamamlandı" {% if siparis.durum == 'tamamlandı' %}selected{% endif %}>
+                                        Tamamlandı
+                                    </option>
+                                    <option value="iptal" {% if siparis.durum == 'iptal' %}selected{% endif %}>
+                                        İptal
+                                    </option>
+                                </select>
+                            </td>
+                            <td>
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-primary"
+                                        data-action="show-details"
+                                        data-order-id="{{ siparis.id }}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-danger"
+                                        data-action="cancel-order"
+                                        data-order-id="{{ siparis.id }}">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Toplu İşlem Araçları -->
+            <div class="bulk-actions d-none">
+                <div class="alert alert-info d-flex align-items-center">
+                    <span class="me-auto">
+                        <i class="fas fa-check-square me-2"></i>
+                        <span class="selected-count">0</span> sipariş seçildi
+                    </span>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-bulk-action="onaylandı">
+                            Onayla
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-warning" data-bulk-action="kargoda">
+                            Kargoya Ver
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-success" data-bulk-action="tamamlandı">
+                            Tamamla
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-bulk-action="iptal">
+                            İptal Et
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sipariş Detay Modal -->
+<div class="modal fade" id="orderDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sipariş Detayı</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Sipariş detayları AJAX ile yüklenecek -->
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Yükleniyor...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/admin_siparisler.js') }}"></script>
+{% endblock %}

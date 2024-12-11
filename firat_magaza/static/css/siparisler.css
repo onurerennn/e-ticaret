@@ -1,0 +1,247 @@
+/* Siparişler Sayfası Özel Stilleri */
+
+/* Filtre Kartı */
+.filter-card {
+    background-color: #fff;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+}
+
+.filter-card .form-control,
+.filter-card .form-select {
+    border-radius: 0.375rem;
+}
+
+.filter-card .form-control:focus,
+.filter-card .form-select:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Sipariş Kartları */
+.order-card {
+    background-color: #fff;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.order-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.order-card .card-header {
+    background-color: transparent;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 1rem;
+}
+
+.order-card .card-body {
+    padding: 1rem;
+}
+
+/* Sipariş Durumu Badge'leri */
+.badge {
+    padding: 0.5em 0.75em;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.badge.bg-warning {
+    color: #000;
+}
+
+/* Sipariş Detay Modal */
+.order-detail-modal .modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.order-detail-modal .modal-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.order-detail-modal .product-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.order-detail-modal .product-item {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.order-detail-modal .product-item:last-child {
+    border-bottom: none;
+}
+
+/* Sipariş Özeti */
+.order-summary {
+    background-color: #f8f9fa;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.order-summary .row {
+    margin-bottom: 0.5rem;
+}
+
+.order-summary .row:last-child {
+    margin-bottom: 0;
+    font-weight: bold;
+}
+
+/* Adres Bilgileri */
+.address-box {
+    background-color: #f8f9fa;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.address-box h6 {
+    margin-bottom: 0.5rem;
+    color: var(--bs-primary);
+}
+
+/* Sipariş Takip Timeline */
+.order-timeline {
+    position: relative;
+    padding-left: 2rem;
+    margin-bottom: 1rem;
+}
+
+.order-timeline::before {
+    content: '';
+    position: absolute;
+    left: 0.5rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: var(--bs-primary);
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 1rem;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -1.5rem;
+    top: 0.25rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background-color: var(--bs-primary);
+}
+
+.timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+/* Loading Durumu */
+.orders-container.loading {
+    position: relative;
+    min-height: 200px;
+}
+
+.orders-container.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1;
+}
+
+.orders-container.loading::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    margin: -20px 0 0 -20px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--bs-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 2;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Boş Durum */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: #dee2e6;
+    margin-bottom: 1rem;
+}
+
+.empty-state h4 {
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    color: #adb5bd;
+    margin-bottom: 1.5rem;
+}
+
+/* Responsive Düzenlemeler */
+@media (max-width: 768px) {
+    .filter-card {
+        margin-bottom: 1rem;
+    }
+
+    .order-card {
+        margin-bottom: 1rem;
+    }
+
+    .order-detail-modal .product-list {
+        max-height: 300px;
+    }
+
+    .timeline-item {
+        padding-left: 0.5rem;
+    }
+}
+
+/* Print Stilleri */
+@media print {
+    .filter-card,
+    .btn-toolbar,
+    .modal-footer {
+        display: none !important;
+    }
+
+    .order-card {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #dee2e6;
+    }
+
+    .badge {
+        border: 1px solid #dee2e6;
+    }
+}

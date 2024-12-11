@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Siparişlerim - Fırat Store{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('ana_sayfa') }}" class="text-decoration-none">
+                    <i class="fas fa-home"></i> Ana Sayfa
+                </a>
+            </li>
+            <li class="breadcrumb-item active">Siparişlerim</li>
+        </ol>
+    </nav>
+
+    {% if current_user.siparisler %}
+        <!-- Siparişler -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h2 class="h5 mb-0">
+                    <i class="fas fa-box me-2"></i>Siparişlerim
+                </h2>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Sipariş No</th>
+                                <th>Tarih</th>
+                                <th>Durum</th>
+                                <th>Toplam Tutar</th>
+                                <th>İndirim</th>
+                                <th>Ödenen Tutar</th>
+                                <th>Detay</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for siparis in current_user.siparisler|sort(attribute='siparis_tarihi', reverse=true) %}
+                            <tr>
+                                <td>#{{ siparis.id }}</td>
+                                <td>{{ siparis.siparis_tarihi|tarih }}</td>
+                                <td>
+                                    <span class="badge {{ {
+                                        'beklemede': 'bg-warning',
+                                        'onaylandı': 'bg-info',
+                                        'kargoda': 'bg-primary',
+                                        'tamamlandı': 'bg-success',
+                                        'iptal': 'bg-danger'
+                                    }.get(siparis.durum, 'bg-secondary') }}">
+                                        {{ siparis.durum|title }}
+                                    </span>
+                                </td>
+                                <td>{{ siparis.toplam_tutar|para }}</td>
+                                <td>{{ siparis.indirim_tutari|para }}</td>
+                                <td class="text-primary fw-bold">
+                                    {{ (siparis.toplam_tutar - siparis.indirim_tutari)|para }}
+                                </td>
+                                <td>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-primary" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#siparisDetay{{ siparis.id }}">
+                                        <i class="fas fa-eye me-1"></i>Detay
+                                    </button>
+                                </td>
+                            </tr>
+
+                            <!-- Sipariş Detay Modal -->
+                            <div class="modal fade" id="siparisDetay{{ siparis.id }}" tabindex="-1">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">
+                                                Sipariş #{{ siparis.id }} Detayı
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <!-- Sipariş Bilgileri -->
+                                            <div class="row mb-4">
+                                                <div class="col-md-6">
+                                                    <h6>Sipariş Bilgileri</h6>
+                                                    <p class="mb-1">
+                                                        <strong>Tarih:</strong> 
+                                                        {{ siparis.siparis_tarihi|tarih }}
+                                                    </p>
+                                                    <p class="mb-1">
+                                                        <strong>Durum:</strong>
+                                                        <span class="badge {{ {
+                                                            'beklemede': 'bg-warning',
+                                                            'onaylandı': 'bg-info',
+                                                            'kargoda': 'bg-primary',
+                                                            'tamamlandı': 'bg-success',
+                                                            'iptal': 'bg-danger'
+                                                        }.get(siparis.durum, 'bg-secondary') }}">
+                                                            {{ siparis.durum|title }}
+                                                        </span>
+                                                    </p>
+                                                    <p class="mb-1">
+                                                        <strong>Ödeme Yöntemi:</strong>
+                                                        {{ siparis.odeme_yontemi|title }}
+                                                    </p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <h6>Teslimat Adresi</h6>
+                                                    <p class="mb-0">{{ siparis.teslimat_adresi }}</p>
+                                                </div>
+                                            </div>
+
+                                            <!-- Ürün Listesi -->
+                                            <h6>Sipariş Edilen Ürünler</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Ürün</th>
+                                                            <th>Birim Fiyat</th>
+                                                            <th>Miktar</th>
+                                                            <th>Toplam</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for siparis_urun in siparis.urunler %}
+                                                        <tr>
+                                                            <td>
+                                                                <a href="{{ url_for('urun_detay', urun_id=siparis_urun.urun.id) }}" 
+                                                                   class="text-decoration-none">
+                                                                    {{ siparis_urun.urun.ad }}
+                                                                </a>
+                                                            </td>
+                                                            <td>{{ siparis_urun.birim_fiyat|para }}</td>
+                                                            <td>{{ siparis_urun.miktar }}</td>
+                                                            <td>{{ siparis_urun.toplam_fiyat()|para }}</td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                    <tfoot class="table-light">
+                                                        <tr>
+                                                            <td colspan="3" class="text-end">
+                                                                <strong>Ara Toplam:</strong>
+                                                            </td>
+                                                            <td>{{ siparis.toplam_tutar|para }}</td>
+                                                        </tr>
+                                                        {% if siparis.indirim_tutari > 0 %}
+                                                        <tr>
+                                                            <td colspan="3" class="text-end text-success">
+                                                                <strong>Not Ortalaması İndirimi:</strong>
+                                                            </td>
+                                                            <td class="text-success">
+                                                                -{{ siparis.indirim_tutari|para }}
+                                                            </td>
+                                                        </tr>
+                                                        {% endif %}
+                                                        <tr>
+                                                            <td colspan="3" class="text-end">
+                                                                <strong>Toplam:</strong>
+                                                            </td>
+                                                            <td class="text-primary fw-bold">
+                                                                {{ (siparis.toplam_tutar - siparis.indirim_tutari)|para }}
+                                                            </td>
+                                                        </tr>
+                                                    </tfoot>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
+            <h3>Henüz Siparişiniz Yok</h3>
+            <p class="text-muted">Siparişleriniz burada listelenecek.</p>
+            <a href="{{ url_for('ana_sayfa') }}" class="btn btn-primary">
+                <i class="fas fa-shopping-bag me-2"></i>Alışverişe Başla
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    border-radius: 15px;
+}
+
+.table > :not(caption) > * > * {
+    padding: 1rem;
+}
+
+.modal-content {
+    border-radius: 15px;
+}
+
+.badge {
+    font-weight: 500;
+    padding: 0.5em 0.8em;
+}
+</style>
+{% endblock %}

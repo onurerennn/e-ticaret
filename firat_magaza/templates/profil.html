@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block title %}Profilim - Fırat Store{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('ana_sayfa') }}" class="text-decoration-none">
+                    <i class="fas fa-home"></i> Ana Sayfa
+                </a>
+            </li>
+            <li class="breadcrumb-item active">Profilim</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Profil Kartı -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-user-circle fa-5x text-primary"></i>
+                    </div>
+                    <h5 class="card-title mb-1">{{ current_user.ad }} {{ current_user.soyad }}</h5>
+                    <p class="text-muted mb-2">{{ current_user.email }}</p>
+                    {% if current_user.ogrenci_no %}
+                        <p class="mb-2">
+                            <i class="fas fa-id-card me-2"></i>
+                            Öğrenci No: {{ current_user.ogrenci_no }}
+                        </p>
+                    {% endif %}
+                    {% if current_user.not_ortalamasi %}
+                        <p class="mb-2">
+                            <i class="fas fa-graduation-cap me-2"></i>
+                            Not Ortalaması: {{ "%.2f"|format(current_user.not_ortalamasi) }}
+                        </p>
+                        <div class="alert alert-info">
+                            <i class="fas fa-percentage me-2"></i>
+                            İndirim Oranınız: %{{ current_user.indirim_orani() }}
+                        </div>
+                    {% endif %}
+                    <p class="mb-0 text-muted">
+                        <i class="fas fa-clock me-2"></i>
+                        Üyelik: {{ current_user.kayit_tarihi|tarih }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profil Düzenleme -->
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user-edit me-2"></i>Profil Bilgilerini Düzenle
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('auth.profil_guncelle') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="ad" class="form-label">Ad</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="ad" 
+                                       name="ad" 
+                                       value="{{ current_user.ad }}" 
+                                       required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="soyad" class="form-label">Soyad</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="soyad" 
+                                       name="soyad" 
+                                       value="{{ current_user.soyad }}" 
+                                       required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="not_ortalamasi" class="form-label">Not Ortalaması</label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="not_ortalamasi" 
+                                   name="not_ortalamasi" 
+                                   value="{{ current_user.not_ortalamasi }}"
+                                   step="0.01"
+                                   min="0"
+                                   max="4">
+                            <small class="form-text text-muted">
+                                2.50 ve üzeri ortalamaya sahip öğrenciler indirim kazanır
+                            </small>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Değişiklikleri Kaydet
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Parola Değiştirme -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-lock me-2"></i>Parola Değiştir
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('auth.parola_degistir') }}" id="passwordForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="mb-3">
+                            <label for="eski_parola" class="form-label">Mevcut Parola</label>
+                            <div class="input-group">
+                                <input type="password" 
+                                       class="form-control" 
+                                       id="eski_parola" 
+                                       name="eski_parola" 
+                                       required>
+                                <button class="btn btn-outline-secondary" 
+                                        type="button" 
+                                        onclick="togglePassword('eski_parola')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="yeni_parola" class="form-label">Yeni Parola</label>
+                            <div class="input-group">
+                                <input type="password" 
+                                       class="form-control" 
+                                       id="yeni_parola" 
+                                       name="yeni_parola" 
+                                       required
+                                       minlength="6">
+                                <button class="btn btn-outline-secondary" 
+                                        type="button" 
+                                        onclick="togglePassword('yeni_parola')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <small class="form-text text-muted">
+                                En az 6 karakter uzunluğunda olmalıdır
+                            </small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="yeni_parola_tekrar" class="form-label">Yeni Parola Tekrar</label>
+                            <div class="input-group">
+                                <input type="password" 
+                                       class="form-control" 
+                                       id="yeni_parola_tekrar" 
+                                       name="yeni_parola_tekrar" 
+                                       required
+                                       minlength="6">
+                                <button class="btn btn-outline-secondary" 
+                                        type="button" 
+                                        onclick="togglePassword('yeni_parola_tekrar')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-key me-2"></i>Parolayı Değiştir
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    border-radius: 15px;
+}
+
+.input-group-text {
+    background-color: transparent;
+    border-right: none;
+}
+
+.input-group .form-control {
+    border-left: none;
+}
+
+.input-group .form-control:focus {
+    border-color: #dee2e6;
+    box-shadow: none;
+}
+
+.input-group .btn-outline-secondary {
+    border-color: #dee2e6;
+}
+
+.input-group .btn-outline-secondary:hover {
+    background-color: transparent;
+    color: var(--bs-primary);
+}
+
+/* Not ortalaması inputu için özel stil */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"] {
+    appearance: textfield; /* Standart özellik */
+    -webkit-appearance: textfield; /* WebKit tarayıcılar için */
+    -moz-appearance: textfield; /* Firefox tarayıcılar için */
+}
+
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    const icon = input.nextElementSibling.querySelector('i');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+// Parola değiştirme formu kontrolü
+document.getElementById('passwordForm').addEventListener('submit', function(e) {
+    const yeniParola = document.getElementById('yeni_parola').value;
+    const yeniParolaTekrar = document.getElementById('yeni_parola_tekrar').value;
+    
+    if (yeniParola !== yeniParolaTekrar) {
+        e.preventDefault();
+        alert('Yeni parolalar eşleşmiyor!');
+    }
+});
+
+// Not ortalaması kontrolü
+document.getElementById('not_ortalamasi').addEventListener('input', function(e) {
+    const value = parseFloat(this.value);
+    if (value > 4) this.value = 4;
+    if (value < 0) this.value = 0;
+});
+</script>
+{% endblock %}
